@@ -142,6 +142,31 @@ RSpec.describe Account, type: :model do
       end
     end
 
+    describe 'when evolution limits are configured' do
+      before do
+        account.update(limits: { evolution_sessions: 10 })
+      end
+
+      it 'returns the total and available sessions' do
+        sessions = account.usage_limits[:evolution][:sessions]
+        expect(sessions[:total_count]).to eq(10)
+        expect(sessions[:current_available]).to eq(10)
+        expect(sessions[:consumed]).to eq(0)
+      end
+
+      it 'tracks consumption correctly' do
+        account.increment_evolution_usage
+        sessions = account.usage_limits[:evolution][:sessions]
+        expect(account.custom_attributes['evolution_sessions_usage']).to eq(1)
+        expect(sessions[:current_available]).to eq(9)
+
+        account.reset_evolution_usage
+        sessions = account.usage_limits[:evolution][:sessions]
+        expect(account.custom_attributes['evolution_sessions_usage']).to eq(0)
+        expect(sessions[:current_available]).to eq(10)
+      end
+    end
+
     describe 'audit logs' do
       it 'returns audit logs' do
         # checking whether associated_audits method is present

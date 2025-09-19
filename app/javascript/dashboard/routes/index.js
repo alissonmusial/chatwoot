@@ -10,8 +10,12 @@ const routes = [...dashboard.routes];
 
 export const router = createRouter({ history: createWebHistory(), routes });
 
-export const validateAuthenticateRoutePermission = (to, next) => {
-  const { isLoggedIn, getCurrentUser: user } = store.getters;
+export const validateAuthenticateRoutePermission = (
+  to,
+  next,
+  appStore = store
+) => {
+  const { isLoggedIn, getCurrentUser: user } = appStore.getters;
 
   if (!isLoggedIn) {
     window.location.assign('/app/login');
@@ -22,7 +26,11 @@ export const validateAuthenticateRoutePermission = (to, next) => {
     return next(frontendURL(`accounts/${user.account_id}/dashboard`));
   }
 
-  const nextRoute = validateLoggedInRoutes(to, store.getters.getCurrentUser);
+  const nextRoute = validateLoggedInRoutes(
+    to,
+    appStore.getters.getCurrentUser,
+    appStore
+  );
   return nextRoute ? next(frontendURL(nextRoute)) : next();
 };
 

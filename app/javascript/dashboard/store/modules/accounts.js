@@ -11,6 +11,73 @@ const findRecordById = ($state, id) =>
 
 const TRIAL_PERIOD_DAYS = 15;
 
+const mapSubscription = subscription => {
+  if (!subscription) {
+    return {};
+  }
+
+  const {
+    plan = null,
+    status = null,
+    quantity = null,
+    ends_on: endsOn = null,
+  } = subscription;
+
+  return {
+    plan,
+    status,
+    quantity,
+    endsOn,
+  };
+};
+
+const normalizePlan = plan => {
+  if (!plan) {
+    return {};
+  }
+
+  const { name = null, limits = {}, features = [] } = plan;
+
+  return {
+    name,
+    limits,
+    features,
+  };
+};
+
+const buildSubscriptionFromAttributes = customAttributes => {
+  if (!customAttributes) return {};
+
+  const {
+    plan_name: plan,
+    subscription_status: status,
+    subscribed_quantity: quantity,
+    subscription_ends_on: endsOn,
+  } = customAttributes;
+
+  return mapSubscription({ plan, status, quantity, ends_on: endsOn });
+};
+
+const buildAccountRecord = payload => {
+  const subscription = buildSubscriptionFromAttributes(
+    payload.custom_attributes
+  );
+  const plan = normalizePlan(payload.plan);
+
+  const planName = subscription.plan || plan.name;
+
+  const normalizedPlan = {
+    ...plan,
+    name: planName,
+  };
+
+  return {
+    ...payload,
+    subscription,
+    plan: normalizedPlan,
+  };
+};
+
 const state = {
   records: [],
   uiFlags: {
@@ -57,7 +124,8 @@ export const actions = {
     commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingItem: true });
     try {
       const response = await AccountAPI.get();
-      commit(types.default.ADD_ACCOUNT, response.data);
+      const accountRecord = buildAccountRecord(response.data);
+      commit(types.default.ADD_ACCOUNT, accountRecord);
       commit(types.default.SET_ACCOUNT_UI_FLAG, {
         isFetchingItem: false,
       });
@@ -143,7 +211,18 @@ export const actions = {
   limits: async ({ commit }) => {
     try {
       const response = await EnterpriseAccountAPI.getLimits();
-      commit(types.default.SET_ACCOUNT_LIMITS, response.data);
+      const { id, limits, subscription, plan } = response.data;
+      const payload = {
+        id,
+        limits,
+        subscription: mapSubscription(subscription),
+      };
+
+      if (plan) {
+        payload.plan = normalizePlan(plan);
+      }
+
+      commit(types.default.SET_ACCOUNT_LIMITS, payload);
     } catch (error) {
       // silent error
     }

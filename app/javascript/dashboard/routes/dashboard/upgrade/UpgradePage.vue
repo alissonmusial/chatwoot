@@ -28,8 +28,38 @@ const { isAdmin } = useAdmin();
 
 const isOnChatwootCloud = useMapGetter('globalConfig/isOnChatwootCloud');
 
-const testLimit = ({ allowed, consumed }) => {
-  return consumed > allowed;
+const isNumeric = value => typeof value === 'number' && Number.isFinite(value);
+
+const limitExceeded = limit => {
+  if (!limit) return false;
+
+  const {
+    allowed,
+    consumed,
+    total_count: totalCount,
+    current_available: currentAvailable,
+  } = limit;
+
+  if (isNumeric(allowed) && isNumeric(consumed)) {
+    if (allowed === 0) {
+      return consumed > 0;
+    }
+    return consumed >= allowed;
+  }
+
+  if (isNumeric(totalCount)) {
+    if (totalCount === 0) {
+      return true;
+    }
+
+    const remaining = isNumeric(currentAvailable)
+      ? currentAvailable
+      : totalCount - (isNumeric(consumed) ? consumed : 0);
+
+    return remaining <= 0;
+  }
+
+  return false;
 };
 
 const isTrialAccount = computed(() => {
@@ -51,18 +81,21 @@ const limitExceededMessage = computed(() => {
     conversation,
     non_web_inboxes: nonWebInboxes,
     agents,
+    evolution,
   } = account.limits;
 
   let message = '';
 
-  if (testLimit(conversation)) {
+  if (limitExceeded(conversation)) {
     message = t('GENERAL_SETTINGS.LIMIT_MESSAGES.CONVERSATION');
-  } else if (testLimit(nonWebInboxes)) {
+  } else if (limitExceeded(nonWebInboxes)) {
     message = t('GENERAL_SETTINGS.LIMIT_MESSAGES.INBOXES');
-  } else if (testLimit(agents)) {
+  } else if (limitExceeded(agents)) {
     message = t('GENERAL_SETTINGS.LIMIT_MESSAGES.AGENTS', {
       allowedAgents: agents.allowed,
     });
+  } else if (limitExceeded(evolution?.sessions)) {
+    message = t('GENERAL_SETTINGS.LIMIT_MESSAGES.EVOLUTION');
   }
 
   return message;
@@ -76,11 +109,40 @@ const isLimitExceeded = computed(() => {
     conversation,
     non_web_inboxes: nonWebInboxes,
     agents,
+    evolution,
   } = account.limits;
 
   return (
-    testLimit(conversation) || testLimit(nonWebInboxes) || testLimit(agents)
+    limitExceeded(conversation) ||
+    limitExceeded(nonWebInboxes) ||
+    limitExceeded(agents) ||
+    limitExceeded(evolution?.sessions)
   );
+});
+
+const subscription = computed(() => currentAccount.value?.subscription || {});
+
+const subscriptionStatus = computed(() => subscription.value.status || '');
+
+const subscriptionEndsOn = computed(() =>
+  subscription.value.endsOn ? new Date(subscription.value.endsOn) : null
+);
+
+const isSubscriptionExpired = computed(() => {
+  if (!subscriptionStatus.value) {
+    return false;
+  }
+
+  const activeStatuses = ['active', 'trialing', 'past_due'];
+  if (!activeStatuses.includes(subscriptionStatus.value)) {
+    return true;
+  }
+
+  if (subscriptionStatus.value === 'past_due' && subscriptionEndsOn.value) {
+    return subscriptionEndsOn.value < new Date();
+  }
+
+  return false;
 });
 
 const shouldShowUpgradePage = computed(() => {
@@ -88,7 +150,7 @@ const shouldShowUpgradePage = computed(() => {
   if (props.bypassUpgradePage) return false;
   if (!isOnChatwootCloud.value) return false;
   if (isTrialAccount.value) return false;
-  return isLimitExceeded.value;
+  return isLimitExceeded.value || isSubscriptionExpired.value;
 });
 
 const fetchLimits = () => {

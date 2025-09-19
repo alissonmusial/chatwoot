@@ -13,15 +13,18 @@ class Enterprise::Billing::CreateStripeCustomerService
         items: [{ price: price_id, quantity: default_quantity }]
       }
     )
-    account.update!(
-      custom_attributes: {
+    account.assign_attributes(
+      custom_attributes: (account.custom_attributes || {}).merge(
         stripe_customer_id: customer_id,
         stripe_price_id: subscription['plan']['id'],
         stripe_product_id: subscription['plan']['product'],
-        plan_name: default_plan['name'],
+        plan_name: default_plan&.[]('name'),
         subscribed_quantity: subscription['quantity']
-      }
+      ),
+      limits: merge_plan_limits(default_plan)
     )
+    account.status = 'active'
+    account.save!
   end
 
   private
@@ -45,12 +48,22 @@ class Enterprise::Billing::CreateStripeCustomerService
 
   def default_plan
     installation_config = InstallationConfig.find_by(name: 'CHATWOOT_CLOUD_PLANS')
-    @default_plan ||= installation_config.value.first
+    plans = installation_config&.value || []
+    @default_plan ||= plans.first
   end
 
   def price_id
     price_ids = default_plan['price_ids']
     price_ids.first
+  end
+
+  def merge_plan_limits(plan)
+    return account.limits if plan.blank?
+
+    existing_limits = (account.limits || {}).with_indifferent_access
+    plan_limits = (plan['limits'] || {}).transform_keys(&:to_s)
+
+    existing_limits.merge(plan_limits).to_h
   end
 
   def existing_subscription?

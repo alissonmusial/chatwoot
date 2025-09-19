@@ -67,13 +67,13 @@ export default {
       const account = this.getAccount(this.accountId);
       if (!account) return EMPTY_SUBSCRIPTION_INFO;
 
-      const { custom_attributes: subscription } = account;
-      if (!subscription) return EMPTY_SUBSCRIPTION_INFO;
+      const subscription = account.subscription || {};
+      const status = subscription.status || subscription.subscription_status;
+      const endsOn =
+        subscription.endsOn || subscription.subscription_ends_on || null;
+      const parsedEndsOn = endsOn ? new Date(endsOn) : null;
 
-      const { subscription_status: status, subscription_ends_on: endsOn } =
-        subscription;
-
-      return { status, endsOn: new Date(endsOn) };
+      return { status, endsOn: parsedEndsOn };
     },
   },
 };

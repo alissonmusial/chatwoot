@@ -13,27 +13,12 @@ class Enterprise::Api::V1::AccountsController < Api::BaseController
   end
 
   def limits
-    limits = if default_plan?(@account)
-               {
-                 'conversation' => {
-                   'allowed' => 500,
-                   'consumed' => conversations_this_month(@account)
-                 },
-                 'non_web_inboxes' => {
-                   'allowed' => 0,
-                   'consumed' => non_web_inboxes(@account)
-                 },
-                 'agents' => {
-                   'allowed' => 2,
-                   'consumed' => agents(@account)
-                 }
-               }
-             else
-               default_limits
-             end
-
-    # include id in response to ensure that the store can be updated on the frontend
-    render json: { id: @account.id, limits: limits }, status: :ok
+    render json: {
+      id: @account.id,
+      limits: serialized_limits,
+      subscription: subscription_payload,
+      plan: plan_payload
+    }, status: :ok
   end
 
   def checkout
@@ -61,15 +46,65 @@ class Enterprise::Api::V1::AccountsController < Api::BaseController
     render json: { error: 'Not found' }, status: :not_found unless ChatwootApp.chatwoot_cloud?
   end
 
-  def default_limits
+  def serialized_limits
+    usage_limits = @account.usage_limits
+
     {
-      'conversation' => {},
-      'non_web_inboxes' => {},
+      'conversation' => conversation_limits,
+      'non_web_inboxes' => non_web_inbox_limits,
       'agents' => {
-        'allowed' => @account.usage_limits[:agents],
+        'allowed' => usage_limits[:agents],
         'consumed' => agents(@account)
       },
-      'captain' => @account.usage_limits[:captain]
+      'captain' => usage_limits[:captain],
+      'evolution' => usage_limits[:evolution]
+    }.compact
+  end
+
+  def conversation_limits
+    allowed = plan_limit_value(:conversation, default_plan?(@account) ? 500 : nil)
+    return {} if allowed.blank?
+
+    {
+      'allowed' => allowed.to_i,
+      'consumed' => conversations_this_month(@account)
+    }
+  end
+
+  def non_web_inbox_limits
+    allowed = plan_limit_value(:non_web_inboxes, default_plan?(@account) ? 0 : nil)
+    return {} if allowed.blank?
+
+    {
+      'allowed' => allowed.to_i,
+      'consumed' => non_web_inboxes(@account)
+    }
+  end
+
+  def plan_limit_value(key, fallback = nil)
+    limits = @account.limits || {}
+    limit_value = limits[key.to_s]
+    return limit_value if limit_value.present?
+
+    fallback
+  end
+
+  def subscription_payload
+    attributes = @account.custom_attributes || {}
+
+    {
+      plan: attributes['plan_name'],
+      status: attributes['subscription_status'],
+      quantity: attributes['subscribed_quantity'],
+      ends_on: attributes['subscription_ends_on']
+    }.compact
+  end
+
+  def plan_payload
+    {
+      name: subscription_payload[:plan],
+      limits: @account.limits || {},
+      features: @account.enabled_features.keys
     }
   end
 
