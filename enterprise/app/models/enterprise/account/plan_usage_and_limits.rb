@@ -3,6 +3,8 @@ module Enterprise::Account::PlanUsageAndLimits
   CAPTAIN_DOCUMENTS = 'captain_documents'.freeze
   CAPTAIN_RESPONSES_USAGE = 'captain_responses_usage'.freeze
   CAPTAIN_DOCUMENTS_USAGE = 'captain_documents_usage'.freeze
+  EVOLUTION_SESSIONS = 'evolution_sessions'.freeze
+  EVOLUTION_SESSIONS_USAGE = 'evolution_sessions_usage'.freeze
 
   def usage_limits
     {
@@ -11,6 +13,9 @@ module Enterprise::Account::PlanUsageAndLimits
       captain: {
         documents: get_captain_limits(:documents),
         responses: get_captain_limits(:responses)
+      },
+      evolution: {
+        sessions: get_evolution_limits
       }
     }
   end
@@ -23,6 +28,17 @@ module Enterprise::Account::PlanUsageAndLimits
 
   def reset_response_usage
     custom_attributes[CAPTAIN_RESPONSES_USAGE] = 0
+    save
+  end
+
+  def increment_evolution_usage
+    current_usage = custom_attributes[EVOLUTION_SESSIONS_USAGE].to_i
+    custom_attributes[EVOLUTION_SESSIONS_USAGE] = current_usage + 1
+    save
+  end
+
+  def reset_evolution_usage
+    custom_attributes[EVOLUTION_SESSIONS_USAGE] = 0
     save
   end
 
@@ -50,6 +66,14 @@ module Enterprise::Account::PlanUsageAndLimits
 
   private
 
+  def plan_limits
+    (self[:limits] || {}).with_indifferent_access
+  end
+
+  def evolution_monthly_limit
+    plan_limits[EVOLUTION_SESSIONS] || ChatwootApp.max_limit
+  end
+
   def get_captain_limits(type)
     total_count = captain_monthly_limit[type.to_s].to_i
 
@@ -64,6 +88,18 @@ module Enterprise::Account::PlanUsageAndLimits
     {
       total_count: total_count,
       current_available: (total_count - consumed).clamp(0, total_count),
+      consumed: consumed
+    }
+  end
+
+  def get_evolution_limits
+    total_count = evolution_monthly_limit.to_i
+    consumed = custom_attributes[EVOLUTION_SESSIONS_USAGE].to_i
+    consumed = 0 if consumed.negative?
+
+    {
+      total_count: total_count,
+      current_available: [total_count - consumed, 0].max,
       consumed: consumed
     }
   end
@@ -117,9 +153,12 @@ module Enterprise::Account::PlanUsageAndLimits
       'type' => 'object',
       'properties' => {
         'inboxes' => { 'type': 'number' },
+        'conversation' => { 'type': 'number' },
+        'non_web_inboxes' => { 'type': 'number' },
         'agents' => { 'type': 'number' },
         'captain_responses' => { 'type': 'number' },
-        'captain_documents' => { 'type': 'number' }
+        'captain_documents' => { 'type': 'number' },
+        'evolution_sessions' => { 'type': 'number' }
       },
       'required' => [],
       'additionalProperties' => false

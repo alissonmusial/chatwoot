@@ -120,10 +120,47 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
       end
     end
 
+    let(:default_plan_limits) do
+      {
+        'conversation' => 500,
+        'non_web_inboxes' => 0,
+        'agents' => 2,
+        'captain_documents' => 0,
+        'captain_responses' => 0,
+        'evolution_sessions' => 0
+      }
+    end
+    let(:cloud_plans) do
+      [
+        {
+          'name' => 'Hacker',
+          'product_id' => ['plan_id_hacker'],
+          'price_ids' => ['price_hacker'],
+          'features' => [],
+          'limits' => default_plan_limits
+        },
+        {
+          'name' => 'Startups',
+          'product_id' => ['plan_id_startups'],
+          'price_ids' => ['price_startups'],
+          'features' => ['help_center'],
+          'limits' => {
+            'conversation' => 1000,
+            'non_web_inboxes' => 3,
+            'agents' => 5,
+            'captain_documents' => 10,
+            'captain_responses' => 100,
+            'evolution_sessions' => 20
+          }
+        }
+      ]
+    end
+
     context 'when it is an authenticated user' do
       before do
         InstallationConfig.where(name: 'DEPLOYMENT_ENV').first_or_create(value: 'cloud')
-        InstallationConfig.where(name: 'CHATWOOT_CLOUD_PLANS').first_or_create(value: [{ 'name': 'Hacker' }])
+        InstallationConfig.where(name: 'CHATWOOT_CLOUD_PLANS').first_or_create(value: cloud_plans)
+        account.update!(limits: default_plan_limits)
       end
 
       context 'when it is an agent' do
@@ -148,9 +185,18 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
               'agents' => {
                 'allowed' => 2,
                 'consumed' => 2
+              },
+              'captain' => {
+                'documents' => { 'total_count' => 0, 'current_available' => 0, 'consumed' => 0 },
+                'responses' => { 'total_count' => 0, 'current_available' => 0, 'consumed' => 0 }
+              },
+              'evolution' => {
+                'sessions' => { 'total_count' => 0, 'current_available' => 0, 'consumed' => 0 }
               }
             }
           )
+          expect(json_response['subscription']).to eq({})
+          expect(json_response['plan']).to eq({ 'name' => nil, 'limits' => default_plan_limits, 'features' => account.enabled_features.keys })
         end
       end
 
@@ -182,7 +228,20 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
               'agents' => {
                 'allowed' => 2,
                 'consumed' => 2
+              },
+              'captain' => {
+                'documents' => { 'total_count' => 0, 'current_available' => 0, 'consumed' => 0 },
+                'responses' => { 'total_count' => 0, 'current_available' => 0, 'consumed' => 0 }
+              },
+              'evolution' => {
+                'sessions' => { 'total_count' => 0, 'current_available' => 0, 'consumed' => 0 }
               }
+            },
+            'subscription' => { 'plan' => 'Hacker' },
+            'plan' => {
+              'name' => 'Hacker',
+              'limits' => default_plan_limits,
+              'features' => account.enabled_features.keys
             }
           }
 
@@ -192,6 +251,7 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
 
         it 'returns nil if the plan is not default' do
           account.update!(custom_attributes: { plan_name: 'Startups' })
+          account.update!(limits: cloud_plans.second['limits'])
           get "/enterprise/api/v1/accounts/#{account.id}/limits",
               headers: admin.create_new_auth_token,
               as: :json
@@ -205,10 +265,31 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
               },
               'conversation' => {},
               'captain' => {
-                'documents' => { 'consumed' => 0, 'current_available' => ChatwootApp.max_limit, 'total_count' => ChatwootApp.max_limit },
-                'responses' => { 'consumed' => 0, 'current_available' => ChatwootApp.max_limit, 'total_count' => ChatwootApp.max_limit }
+                'documents' => {
+                  'total_count' => cloud_plans.second['limits']['captain_documents'],
+                  'current_available' => cloud_plans.second['limits']['captain_documents'],
+                  'consumed' => 0
+                },
+                'responses' => {
+                  'total_count' => cloud_plans.second['limits']['captain_responses'],
+                  'current_available' => cloud_plans.second['limits']['captain_responses'],
+                  'consumed' => 0
+                }
               },
-              'non_web_inboxes' => {}
+              'non_web_inboxes' => {},
+              'evolution' => {
+                'sessions' => {
+                  'total_count' => cloud_plans.second['limits']['evolution_sessions'],
+                  'current_available' => cloud_plans.second['limits']['evolution_sessions'],
+                  'consumed' => 0
+                }
+              }
+            },
+            'subscription' => { 'plan' => 'Startups' },
+            'plan' => {
+              'name' => 'Startups',
+              'limits' => cloud_plans.second['limits'],
+              'features' => account.enabled_features.keys
             }
           }
 
@@ -217,6 +298,7 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
         end
 
         it 'returns limits if a plan is not configured' do
+          account.update!(limits: {})
           get "/enterprise/api/v1/accounts/#{account.id}/limits",
               headers: admin.create_new_auth_token,
               as: :json
@@ -235,7 +317,20 @@ RSpec.describe 'Enterprise Billing APIs', type: :request do
               'agents' => {
                 'allowed' => 2,
                 'consumed' => 2
+              },
+              'captain' => {
+                'documents' => { 'total_count' => ChatwootApp.max_limit, 'current_available' => ChatwootApp.max_limit, 'consumed' => 0 },
+                'responses' => { 'total_count' => ChatwootApp.max_limit, 'current_available' => ChatwootApp.max_limit, 'consumed' => 0 }
+              },
+              'evolution' => {
+                'sessions' => { 'total_count' => ChatwootApp.max_limit, 'current_available' => ChatwootApp.max_limit, 'consumed' => 0 }
               }
+            },
+            'subscription' => {},
+            'plan' => {
+              'name' => nil,
+              'limits' => {},
+              'features' => account.enabled_features.keys
             }
           }
           expect(response).to have_http_status(:ok)

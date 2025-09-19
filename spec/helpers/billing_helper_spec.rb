@@ -12,12 +12,26 @@ RSpec.describe BillingHelper do
                  {
                    'name' => 'Hacker',
                    'product_id' => ['plan_id'],
-                   'price_ids' => ['price_1']
+                   'price_ids' => ['price_1'],
+                   'features' => [],
+                   'limits' => {
+                     'conversation' => 500,
+                     'non_web_inboxes' => 0,
+                     'agents' => 2,
+                     'evolution_sessions' => 0
+                   }
                  },
                  {
                    'name' => 'Startups',
                    'product_id' => ['plan_id_2'],
-                   'price_ids' => ['price_2']
+                   'price_ids' => ['price_2'],
+                   'features' => ['help_center'],
+                   'limits' => {
+                     'conversation' => 1000,
+                     'non_web_inboxes' => 3,
+                     'agents' => 5,
+                     'evolution_sessions' => 20
+                   }
                  }
                ]
              })

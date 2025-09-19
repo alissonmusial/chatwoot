@@ -4,6 +4,7 @@
       "CONVERSATION": "You have exceeded the conversation limit. Hacker plan allows only 500 conversations.",
       "INBOXES": "You have exceeded the inbox limit. Hacker plan only supports website live-chat. Additional inboxes like email, WhatsApp etc. require a paid plan.",
       "AGENTS": "You have exceeded the agent limit. Your plan only allows {allowedAgents} agents.",
+      "EVOLUTION": "You have reached your available Evolution sessions. Upgrade your plan to continue.",
       "NON_ADMIN": "Please contact your administrator to upgrade the plan and continue using all features."
     },
     "TITLE": "Account settings",

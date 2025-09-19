@@ -7,17 +7,76 @@ describe Enterprise::Billing::HandleStripeEventService do
   let(:data) { double }
   let(:subscription) { double }
   let!(:account) { create(:account, custom_attributes: { stripe_customer_id: 'cus_123' }) }
+  let(:default_plan_features) { [] }
+  let(:startup_features) do
+    %w[
+      inbound_emails
+      help_center
+      campaigns
+      team_management
+      channel_twitter
+      channel_facebook
+      channel_email
+      channel_instagram
+      captain_integration
+    ]
+  end
+  let(:business_features) { %w[sla custom_roles] }
+  let(:enterprise_features) { %w[audit_logs disable_branding] }
+  let(:plan_limits) do
+    {
+      'Hacker' => {
+        'conversation' => 500,
+        'non_web_inboxes' => 0,
+        'agents' => 2,
+        'captain_responses' => 0,
+        'captain_documents' => 0,
+        'evolution_sessions' => 0
+      },
+      'Startups' => {
+        'conversation' => 1_000,
+        'non_web_inboxes' => 3,
+        'agents' => 5,
+        'captain_responses' => 100,
+        'captain_documents' => 10,
+        'evolution_sessions' => 20
+      },
+      'Business' => {
+        'conversation' => 5_000,
+        'non_web_inboxes' => 10,
+        'agents' => 15,
+        'captain_responses' => 500,
+        'captain_documents' => 50,
+        'evolution_sessions' => 100
+      },
+      'Enterprise' => {
+        'conversation' => 10_000,
+        'non_web_inboxes' => 20,
+        'agents' => 30,
+        'captain_responses' => 2_000,
+        'captain_documents' => 200,
+        'evolution_sessions' => 500
+      }
+    }
+  end
+  let(:cloud_plans) do
+    [
+      { 'name' => 'Hacker', 'product_id' => ['plan_id_hacker'], 'price_ids' => ['price_hacker'], 'features' => default_plan_features,
+        'limits' => plan_limits['Hacker'] },
+      { 'name' => 'Startups', 'product_id' => ['plan_id_startups'], 'price_ids' => ['price_startups'], 'features' => startup_features,
+        'limits' => plan_limits['Startups'] },
+      { 'name' => 'Business', 'product_id' => ['plan_id_business'], 'price_ids' => ['price_business'], 'features' => business_features,
+        'limits' => plan_limits['Business'] },
+      { 'name' => 'Enterprise', 'product_id' => ['plan_id_enterprise'], 'price_ids' => ['price_enterprise'],
+        'features' => enterprise_features, 'limits' => plan_limits['Enterprise'] }
+    ]
+  end
 
   before do
     # Create cloud plans configuration
     create(:installation_config, {
              name: 'CHATWOOT_CLOUD_PLANS',
-             value: [
-               { 'name' => 'Hacker', 'product_id' => ['plan_id_hacker'], 'price_ids' => ['price_hacker'] },
-               { 'name' => 'Startups', 'product_id' => ['plan_id_startups'], 'price_ids' => ['price_startups'] },
-               { 'name' => 'Business', 'product_id' => ['plan_id_business'], 'price_ids' => ['price_business'] },
-               { 'name' => 'Enterprise', 'product_id' => ['plan_id_enterprise'], 'price_ids' => ['price_enterprise'] }
-             ]
+             value: cloud_plans
            })
     # Setup common subscription mocks
     allow(event).to receive(:data).and_return(data)
@@ -38,18 +97,20 @@ describe Enterprise::Billing::HandleStripeEventService do
       stripe_event_service.new.perform(event: event)
 
       # Verify account attributes were updated
-      expect(account.reload.custom_attributes).to include(
+      reloaded_account = account.reload
+      expect(reloaded_account.custom_attributes).to include(
         'plan_name' => 'Hacker',
         'stripe_product_id' => 'plan_id_hacker',
         'subscription_status' => 'active'
       )
 
+      expect(reloaded_account.limits).to include(plan_limits['Hacker'])
+      expect(reloaded_account.status).to eq('active')
+
       # Verify premium features are disabled for default plan
-      expect(account).not_to be_feature_enabled('channel_email')
-      expect(account).not_to be_feature_enabled('help_center')
-      expect(account).not_to be_feature_enabled('sla')
-      expect(account).not_to be_feature_enabled('custom_roles')
-      expect(account).not_to be_feature_enabled('audit_logs')
+      (startup_features + business_features + enterprise_features).each do |feature|
+        expect(reloaded_account).not_to be_feature_enabled(feature)
+      end
     end
 
     it 'resets captain usage on subscription update' do
@@ -65,7 +126,8 @@ describe Enterprise::Billing::HandleStripeEventService do
 
       # Verify usage was reset
       expect(account.reload.custom_attributes['captain_responses_usage']).to eq(0)
-    end
+      expect(account.status).to eq('active')
+  end
   end
 
   describe 'subscription deletion handling' do
@@ -84,7 +146,8 @@ describe Enterprise::Billing::HandleStripeEventService do
       expect(Enterprise::Billing::CreateStripeCustomerService).to have_received(:new)
         .with(account: account)
       expect(customer_service).to have_received(:perform)
-    end
+      expect(account.status).to eq('suspended')
+  end
   end
 
   describe 'plan-specific feature management' do
@@ -94,23 +157,19 @@ describe Enterprise::Billing::HandleStripeEventService do
                                            .and_return({ 'id' => 'test', 'product' => 'plan_id_hacker', 'name' => 'Hacker' })
 
         # Enable features first
-        described_class::STARTUP_PLAN_FEATURES.each do |feature|
+        (startup_features + business_features + enterprise_features).each do |feature|
           account.enable_features(feature)
         end
-        account.enable_features(*described_class::BUSINESS_PLAN_FEATURES)
-        account.enable_features(*described_class::ENTERPRISE_PLAN_FEATURES)
         account.save!
 
         account.reload
-        expect(account).to be_feature_enabled(described_class::STARTUP_PLAN_FEATURES.first)
+        expect(account).to be_feature_enabled(startup_features.first)
 
         stripe_event_service.new.perform(event: event)
 
         account.reload
 
-        all_features = described_class::STARTUP_PLAN_FEATURES +
-                       described_class::BUSINESS_PLAN_FEATURES +
-                       described_class::ENTERPRISE_PLAN_FEATURES
+        all_features = startup_features + business_features + enterprise_features
 
         all_features.each do |feature|
           expect(account).not_to be_feature_enabled(feature)
@@ -127,16 +186,16 @@ describe Enterprise::Billing::HandleStripeEventService do
 
         # Verify basic (Startups) features are enabled
         account.reload
-        described_class::STARTUP_PLAN_FEATURES.each do |feature|
+        startup_features.each do |feature|
           expect(account).to be_feature_enabled(feature)
         end
 
         # But business and enterprise features should be disabled
-        described_class::BUSINESS_PLAN_FEATURES.each do |feature|
+        business_features.each do |feature|
           expect(account).not_to be_feature_enabled(feature)
         end
 
-        described_class::ENTERPRISE_PLAN_FEATURES.each do |feature|
+        enterprise_features.each do |feature|
           expect(account).not_to be_feature_enabled(feature)
         end
       end
@@ -150,15 +209,15 @@ describe Enterprise::Billing::HandleStripeEventService do
         stripe_event_service.new.perform(event: event)
 
         account.reload
-        described_class::STARTUP_PLAN_FEATURES.each do |feature|
+        startup_features.each do |feature|
           expect(account).to be_feature_enabled(feature)
         end
 
-        described_class::BUSINESS_PLAN_FEATURES.each do |feature|
+        business_features.each do |feature|
           expect(account).to be_feature_enabled(feature)
         end
 
-        described_class::ENTERPRISE_PLAN_FEATURES.each do |feature|
+        enterprise_features.each do |feature|
           expect(account).not_to be_feature_enabled(feature)
         end
       end
@@ -172,15 +231,15 @@ describe Enterprise::Billing::HandleStripeEventService do
         stripe_event_service.new.perform(event: event)
 
         account.reload
-        described_class::STARTUP_PLAN_FEATURES.each do |feature|
+        startup_features.each do |feature|
           expect(account).to be_feature_enabled(feature)
         end
 
-        described_class::BUSINESS_PLAN_FEATURES.each do |feature|
+        business_features.each do |feature|
           expect(account).to be_feature_enabled(feature)
         end
 
-        described_class::ENTERPRISE_PLAN_FEATURES.each do |feature|
+        enterprise_features.each do |feature|
           expect(account).to be_feature_enabled(feature)
         end
       end

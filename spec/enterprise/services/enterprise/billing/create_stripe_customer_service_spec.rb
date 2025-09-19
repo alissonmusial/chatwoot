@@ -13,7 +13,18 @@ describe Enterprise::Billing::CreateStripeCustomerService do
       create(
         :installation_config,
         { name: 'CHATWOOT_CLOUD_PLANS', value: [
-          { 'name' => 'A Plan Name', 'product_id' => ['prod_hacker_random'], 'price_ids' => ['price_hacker_random'] }
+          {
+            'name' => 'A Plan Name',
+            'product_id' => ['prod_hacker_random'],
+            'price_ids' => ['price_hacker_random'],
+            'features' => [],
+            'limits' => {
+              'agents' => 2,
+              'conversation' => 500,
+              'non_web_inboxes' => 0,
+              'evolution_sessions' => 0
+            }
+          }
         ] }
       )
     end
@@ -38,7 +49,9 @@ describe Enterprise::Billing::CreateStripeCustomerService do
         .to have_received(:create)
         .with({ customer: 'cus_random_number', items: [{ price: 'price_hacker_random', quantity: 2 }] })
 
-      expect(account.reload.custom_attributes).to eq(
+      reloaded_account = account.reload
+
+      expect(reloaded_account.custom_attributes).to eq(
         {
           stripe_customer_id: 'cus_random_number',
           stripe_price_id: 'price_random_number',
@@ -47,6 +60,13 @@ describe Enterprise::Billing::CreateStripeCustomerService do
           plan_name: 'A Plan Name'
         }.with_indifferent_access
       )
+      expect(reloaded_account.limits).to include(
+        'agents' => 2,
+        'conversation' => 500,
+        'non_web_inboxes' => 0,
+        'evolution_sessions' => 0
+      )
+      expect(reloaded_account.status).to eq('active')
     end
 
     it 'calls stripe methods to create a customer and updates the account' do
@@ -69,7 +89,9 @@ describe Enterprise::Billing::CreateStripeCustomerService do
         .to have_received(:create)
         .with({ customer: customer.id, items: [{ price: 'price_hacker_random', quantity: 2 }] })
 
-      expect(account.reload.custom_attributes).to eq(
+      reloaded_account = account.reload
+
+      expect(reloaded_account.custom_attributes).to eq(
         {
           stripe_customer_id: customer.id,
           stripe_price_id: 'price_random_number',
@@ -78,6 +100,13 @@ describe Enterprise::Billing::CreateStripeCustomerService do
           plan_name: 'A Plan Name'
         }.with_indifferent_access
       )
+      expect(reloaded_account.limits).to include(
+        'agents' => 2,
+        'conversation' => 500,
+        'non_web_inboxes' => 0,
+        'evolution_sessions' => 0
+      )
+      expect(reloaded_account.status).to eq('active')
     end
   end
 
@@ -86,7 +115,18 @@ describe Enterprise::Billing::CreateStripeCustomerService do
       create(
         :installation_config,
         { name: 'CHATWOOT_CLOUD_PLANS', value: [
-          { 'name' => 'A Plan Name', 'product_id' => ['prod_hacker_random'], 'price_ids' => ['price_hacker_random'] }
+          {
+            'name' => 'A Plan Name',
+            'product_id' => ['prod_hacker_random'],
+            'price_ids' => ['price_hacker_random'],
+            'features' => [],
+            'limits' => {
+              'agents' => 2,
+              'conversation' => 500,
+              'non_web_inboxes' => 0,
+              'evolution_sessions' => 0
+            }
+          }
         ] }
       )
     end

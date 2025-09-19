@@ -18,6 +18,30 @@ const initialState = {
   },
 };
 
+const buildSubscriptionFromAttributes = customAttributes => {
+  if (!customAttributes) return {};
+
+  const {
+    plan_name: plan,
+    subscription_status: status,
+    subscribed_quantity: quantity,
+    subscription_ends_on: endsOn,
+  } = customAttributes;
+
+  return {
+    plan,
+    status,
+    quantity,
+    endsOn,
+  };
+};
+
+const enhanceAccounts = accounts =>
+  accounts.map(account => ({
+    ...account,
+    subscription: buildSubscriptionFromAttributes(account.custom_attributes),
+  }));
+
 // getters
 export const getters = {
   isLoggedIn($state) {
@@ -105,8 +129,11 @@ export const actions = {
     try {
       const response = await authAPI.validityCheck();
       const currentUser = response.data.payload.data;
-      setUser(currentUser);
-      context.commit(types.SET_CURRENT_USER, currentUser);
+      const accounts = currentUser.accounts || [];
+      const enhancedAccounts = enhanceAccounts(accounts);
+      const enhancedUser = { ...currentUser, accounts: enhancedAccounts };
+      setUser(enhancedUser);
+      context.commit(types.SET_CURRENT_USER, enhancedUser);
     } catch (error) {
       if (error?.response?.status === 401) {
         clearCookiesOnLogout();

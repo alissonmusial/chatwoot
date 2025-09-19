@@ -24,29 +24,19 @@ const {
 
 const uiFlags = useMapGetter('accounts/getUIFlags');
 const store = useStore();
-const customAttributes = computed(() => {
-  return currentAccount.value.custom_attributes || {};
-});
+const subscription = computed(() => currentAccount.value.subscription || {});
 
-/**
- * Computed property for plan name
- * @returns {string|undefined}
- */
 const planName = computed(() => {
-  return customAttributes.value.plan_name;
+  return subscription.value.plan;
 });
 
-/**
- * Computed property for subscribed quantity
- * @returns {number|undefined}
- */
 const subscribedQuantity = computed(() => {
-  return customAttributes.value.subscribed_quantity;
+  return subscription.value.quantity;
 });
 
 const subscriptionRenewsOn = computed(() => {
-  if (!customAttributes.value.subscription_ends_on) return '';
-  const endDate = new Date(customAttributes.value.subscription_ends_on);
+  if (!subscription.value.endsOn) return '';
+  const endDate = new Date(subscription.value.endsOn);
   // return date as 12 Jan, 2034
   return format(endDate, 'dd MMM, yyyy');
 });

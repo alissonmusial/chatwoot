@@ -53,7 +53,64 @@ const validateActiveAccountRoutes = (to, user) => {
   return isAccessible ? null : defaultRedirectPage(to, userPermissions);
 };
 
-export const validateLoggedInRoutes = (to, user) => {
+const BILLING_REQUIRED_ROUTE_PREFIXES = ['captain_'];
+
+const requiresSubscriptionForRoute = routeName =>
+  BILLING_REQUIRED_ROUTE_PREFIXES.some(prefix => routeName?.startsWith(prefix));
+
+const isQuotaUnavailable = limit => {
+  if (!limit) return false;
+
+  const { total_count: totalCount, current_available: currentAvailable } =
+    limit;
+
+  if (typeof totalCount === 'number') {
+    if (totalCount === 0) {
+      return true;
+    }
+
+    if (typeof currentAvailable === 'number') {
+      return currentAvailable <= 0;
+    }
+  }
+
+  return false;
+};
+
+const shouldForceBilling = account => {
+  if (!account) return false;
+
+  const subscription = account.subscription || {};
+  const planName =
+    subscription.plan ||
+    account.plan_name ||
+    account.custom_attributes?.plan_name;
+  const status = subscription.status;
+  const evolutionLimit = account.limits?.evolution?.sessions;
+  const quotaUnavailable = isQuotaUnavailable(evolutionLimit);
+
+  if (!planName || planName === 'Hacker') {
+    return true;
+  }
+
+  const activeStatuses = ['active', 'trialing', 'past_due'];
+
+  if (!status || !activeStatuses.includes(status)) {
+    return true;
+  }
+
+  if (status === 'past_due' && subscription.endsOn) {
+    const renewalDate = new Date(subscription.endsOn);
+    if (Number.isNaN(renewalDate.getTime())) {
+      return false;
+    }
+    return renewalDate < new Date();
+  }
+
+  return quotaUnavailable;
+};
+
+export const validateLoggedInRoutes = (to, user, store) => {
   const currentAccount = getCurrentAccount(user, Number(to.params.accountId));
   // If current account is missing, either user does not have
   // access to the account or the account is deleted, return to login screen
@@ -61,9 +118,26 @@ export const validateLoggedInRoutes = (to, user) => {
     return `app/login`;
   }
 
-  const isCurrentAccountActive = currentAccount.status === 'active';
+  const getAccountFromStore = store?.getters?.['accounts/getAccount'];
+  const accountRecordFromStore =
+    typeof getAccountFromStore === 'function'
+      ? getAccountFromStore(Number(to.params.accountId))
+      : {};
+
+  const hydratedAccount = {
+    ...currentAccount,
+    ...accountRecordFromStore,
+  };
+
+  const isCurrentAccountActive = hydratedAccount.status === 'active';
 
   if (isCurrentAccountActive) {
+    if (
+      requiresSubscriptionForRoute(to.name) &&
+      shouldForceBilling(hydratedAccount)
+    ) {
+      return `accounts/${to.params.accountId}/settings/billing`;
+    }
     return validateActiveAccountRoutes(to, user);
   }
 
