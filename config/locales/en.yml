@@ -31,6 +31,108 @@
 
 en:
   hello: 'Hello world'
+  public_store:
+    meta:
+      title: 'Atelier Madeira Nobre | Loja online'
+      description: 'Loja online de artigos de madeira premium, com peças autorais, acabamento artesanal e produção sob encomenda.'
+    brand:
+      kicker: 'Atelier'
+      name: 'Madeira Nobre'
+    nav:
+      collection: 'Coleção'
+      atelier: 'Atelier'
+      contact: 'Contato'
+      cta: 'Atendimento exclusivo'
+    hero:
+      kicker: 'Alta marcenaria contemporânea'
+      title: 'Peças de madeira sob medida para cozinhas e salas de alto padrão'
+      subtitle: 'Tábuas para carne, mesas e acessórios feitos com madeiras nobres, design autoral e acabamento impecável.'
+      primary_action: 'Agendar consultoria'
+      secondary_action: 'Ver coleção'
+      metrics:
+        first:
+          value: '12 anos'
+          label: 'de atelier autoral'
+        second:
+          value: '48h'
+          label: 'para orçamento inicial'
+        third:
+          value: '100%'
+          label: 'madeira certificada'
+      card:
+        kicker: 'Detalhes que elevam'
+        title: 'Cada peça recebe atenção de boutique'
+        description: 'Selecionamos tábuas únicas, cuidamos da secagem e finalizamos manualmente com óleos naturais.'
+    highlights:
+      items:
+        - title: 'Seleção de madeiras raras'
+          description: 'Cumaru, nogueira, jequitibá e ipê escolhidos por desenho e estabilidade.'
+        - title: 'Acabamento de chef'
+          description: 'Superfícies seladas para contato com alimentos e toque acetinado.'
+        - title: 'Design exclusivo'
+          description: 'Modelos que valorizam veios naturais e ressaltam o espaço gourmet.'
+    products:
+      kicker: 'Coleção premium'
+      title: 'Peças icônicas para casas sofisticadas'
+      subtitle: 'Um catálogo enxuto, pensado para transformar experiências de cozinha e convívio.'
+      note: 'Envio nacional com seguro total'
+      items:
+        - name: 'Tábua Ares de Nogueira'
+          description: 'Tábua para carne com 45 cm, canaleta profunda e pés antiderrapantes.'
+          price: 'R$ 890'
+          tag: 'Mais vendido'
+          availability: 'Pronta entrega'
+        - name: 'Mesa Luar em Jequitibá'
+          description: 'Mesa de jantar para 8 lugares com tampo maciço e borda orgânica.'
+          price: 'R$ 18.900'
+          tag: 'Sob encomenda'
+          availability: 'Entrega em 45 dias'
+        - name: 'Bandeja Serena'
+          description: 'Bandeja de serviço com 60 cm, alças embutidas e acabamento fosco.'
+          price: 'R$ 1.450'
+          tag: 'Edição limitada'
+          availability: '5 unidades'
+        - name: 'Bloco de Facas Atlântida'
+          description: 'Bloco de facas modular com compartimentos ocultos e base em latão.'
+          price: 'R$ 2.350'
+          tag: 'Novo'
+          availability: 'Pronta entrega'
+    services:
+      kicker: 'Curadoria personalizada'
+      title: 'Experiência sob medida para projetos exclusivos'
+      subtitle: 'Atendemos arquitetos, chefs e proprietários que buscam peças de personalidade.'
+      items:
+        - title: 'Consultoria de materiais'
+          description: 'Recomendamos madeiras e acabamentos compatíveis com o ambiente e uso.'
+        - title: 'Prototipagem refinada'
+          description: 'Maquetes e amostras com veios reais para validação estética.'
+        - title: 'Instalação assistida'
+          description: 'Equipe técnica para entrega, montagem e ajustes finais.'
+    atelier:
+      kicker: 'Nossa assinatura'
+      title: 'Atelier com produção artesanal e tecnologia de precisão'
+      description: 'Unimos técnicas de marcenaria clássica com ferramentas de alta precisão para garantir peças únicas.'
+    testimonials:
+      items:
+        - quote: 'A tábua virou peça central do espaço gourmet. O acabamento é impecável.'
+          author: 'Camila R., São Paulo'
+        - quote: 'A mesa trouxe sofisticação e conforto. Atendimento impecável do início ao fim.'
+          author: 'Henrique M., Brasília'
+        - quote: 'Design atemporal e presença marcante. Uma verdadeira obra de arte.'
+          author: 'Lívia A., Florianópolis'
+    curation:
+      title: 'Produção limitada para manter a exclusividade'
+      description: 'Cada lote é numerado e acompanhado de certificado de origem.'
+      tag: 'Série numerada'
+    cta:
+      kicker: 'Vamos criar sua peça'
+      title: 'Agende uma conversa com nosso atelier'
+      subtitle: 'Compartilhe referências, medidas e expectativas. Retornamos com um roteiro personalizado.'
+      primary_action: 'Falar com o atelier'
+      secondary_action: 'Ligar agora'
+    footer:
+      note: 'Atelier Madeira Nobre · Peças autorais em madeira maciça'
+      address: 'Atendimento por agendamento · Brasil'
   inbox:
     reauthorization:
       success: 'Channel reauthorized successfully'

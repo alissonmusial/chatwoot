@@ -515,6 +515,7 @@ Rails.application.routes.draw do
   get 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#verify'
   post 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#process_payload'
   get 'webhooks/instagram', to: 'webhooks/instagram#verify'
+  get 'loja', to: 'public/store#show'
   post 'webhooks/instagram', to: 'webhooks/instagram#events'
 
   namespace :twitter do

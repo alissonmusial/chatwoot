@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= t('public_store.meta.title') %></title>
+    <meta name="description" content="<%= t('public_store.meta.description') %>">
+    <%= csrf_meta_tags %>
+    <%= vite_client_tag %>
+    <%= vite_javascript_tag 'portal' %>
+    <script>
+      window.portalConfig = {
+        customDomain: '',
+        hostURL: '',
+        isPlainLayoutEnabled: 'true'
+      };
+    </script>
+  </head>
+  <body class="bg-slate-950 text-slate-100 antialiased">
+    <%= yield %>
+  </body>
+</html>

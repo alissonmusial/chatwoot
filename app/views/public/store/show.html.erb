@@ -1,0 +1,165 @@
+<% highlights = I18n.t('public_store.highlights.items') %>
+<% products = I18n.t('public_store.products.items') %>
+<% services = I18n.t('public_store.services.items') %>
+<% testimonials = I18n.t('public_store.testimonials.items') %>
+
+<div class="min-h-screen bg-slate-950">
+  <header class="border-b border-slate-800/80">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+      <div class="flex flex-col">
+        <span class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-400"><%= t('public_store.brand.kicker') %></span>
+        <span class="text-lg font-semibold text-slate-100"><%= t('public_store.brand.name') %></span>
+      </div>
+      <nav class="hidden gap-8 text-sm text-slate-300 md:flex">
+        <a class="transition hover:text-amber-300" href="#colecao"><%= t('public_store.nav.collection') %></a>
+        <a class="transition hover:text-amber-300" href="#atelier"><%= t('public_store.nav.atelier') %></a>
+        <a class="transition hover:text-amber-300" href="#contato"><%= t('public_store.nav.contact') %></a>
+      </nav>
+      <a class="hidden rounded-full border border-amber-300/60 px-5 py-2 text-sm font-semibold text-amber-200 transition hover:border-amber-300 hover:text-amber-100 md:inline-flex" href="#contato">
+        <%= t('public_store.nav.cta') %>
+      </a>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-6 py-16">
+    <section class="grid gap-10 md:grid-cols-[1.1fr_0.9fr] md:items-center">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-400"><%= t('public_store.hero.kicker') %></p>
+        <h1 class="mt-4 text-4xl font-semibold leading-tight text-slate-50 md:text-5xl"><%= t('public_store.hero.title') %></h1>
+        <p class="mt-6 text-lg text-slate-300"><%= t('public_store.hero.subtitle') %></p>
+        <div class="mt-8 flex flex-wrap gap-4">
+          <a class="rounded-full bg-amber-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300" href="#contato">
+            <%= t('public_store.hero.primary_action') %>
+          </a>
+          <a class="rounded-full border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-500" href="#colecao">
+            <%= t('public_store.hero.secondary_action') %>
+          </a>
+        </div>
+        <div class="mt-10 flex flex-wrap gap-6 text-sm text-slate-400">
+          <div class="flex flex-col">
+            <span class="text-base font-semibold text-slate-100"><%= t('public_store.hero.metrics.first.value') %></span>
+            <span><%= t('public_store.hero.metrics.first.label') %></span>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-base font-semibold text-slate-100"><%= t('public_store.hero.metrics.second.value') %></span>
+            <span><%= t('public_store.hero.metrics.second.label') %></span>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-base font-semibold text-slate-100"><%= t('public_store.hero.metrics.third.value') %></span>
+            <span><%= t('public_store.hero.metrics.third.label') %></span>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-amber-900/30 p-8 shadow-2xl">
+        <div class="space-y-6">
+          <div>
+            <span class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300"><%= t('public_store.hero.card.kicker') %></span>
+            <h2 class="mt-3 text-2xl font-semibold text-slate-50"><%= t('public_store.hero.card.title') %></h2>
+            <p class="mt-3 text-sm text-slate-300"><%= t('public_store.hero.card.description') %></p>
+          </div>
+          <div class="grid gap-4">
+            <% highlights.each do |highlight| %>
+              <div class="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-4">
+                <p class="text-sm font-semibold text-amber-200"><%= highlight['title'] %></p>
+                <p class="mt-2 text-sm text-slate-300"><%= highlight['description'] %></p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="colecao" class="mt-20">
+      <div class="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-400"><%= t('public_store.products.kicker') %></p>
+          <h2 class="mt-3 text-3xl font-semibold text-slate-50"><%= t('public_store.products.title') %></h2>
+          <p class="mt-4 max-w-2xl text-base text-slate-300"><%= t('public_store.products.subtitle') %></p>
+        </div>
+        <span class="text-sm text-slate-400"><%= t('public_store.products.note') %></span>
+      </div>
+      <div class="mt-10 grid gap-6 md:grid-cols-2">
+        <% products.each do |product| %>
+          <div class="flex h-full flex-col justify-between rounded-3xl border border-slate-800 bg-slate-950/70 p-6">
+            <div>
+              <div class="flex items-center justify-between">
+                <p class="text-lg font-semibold text-slate-100"><%= product['name'] %></p>
+                <span class="rounded-full bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-300"><%= product['tag'] %></span>
+              </div>
+              <p class="mt-3 text-sm text-slate-300"><%= product['description'] %></p>
+            </div>
+            <div class="mt-8 flex items-center justify-between">
+              <span class="text-xl font-semibold text-amber-200"><%= product['price'] %></span>
+              <span class="text-xs text-slate-500"><%= product['availability'] %></span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </section>
+
+    <section id="atelier" class="mt-20 grid gap-10 md:grid-cols-[0.9fr_1.1fr]">
+      <div class="rounded-3xl border border-slate-800 bg-slate-950/80 p-8">
+        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-400"><%= t('public_store.services.kicker') %></p>
+        <h2 class="mt-3 text-3xl font-semibold text-slate-50"><%= t('public_store.services.title') %></h2>
+        <p class="mt-4 text-base text-slate-300"><%= t('public_store.services.subtitle') %></p>
+        <div class="mt-8 space-y-4">
+          <% services.each do |service| %>
+            <div class="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-5">
+              <p class="text-sm font-semibold text-amber-200"><%= service['title'] %></p>
+              <p class="mt-2 text-sm text-slate-300"><%= service['description'] %></p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+      <div class="space-y-6">
+        <div class="rounded-3xl border border-amber-300/20 bg-amber-300/5 p-8">
+          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300"><%= t('public_store.atelier.kicker') %></p>
+          <h3 class="mt-3 text-2xl font-semibold text-slate-100"><%= t('public_store.atelier.title') %></h3>
+          <p class="mt-4 text-base text-slate-300"><%= t('public_store.atelier.description') %></p>
+          <div class="mt-6 flex flex-wrap gap-4">
+            <% testimonials.each do |testimonial| %>
+              <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                <p class="text-sm text-slate-200">“<%= testimonial['quote'] %>”</p>
+                <p class="mt-3 text-xs text-amber-200"><%= testimonial['author'] %></p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+        <div class="rounded-3xl border border-slate-800 bg-slate-950/70 p-6">
+          <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p class="text-sm font-semibold text-slate-100"><%= t('public_store.curation.title') %></p>
+              <p class="mt-2 text-sm text-slate-300"><%= t('public_store.curation.description') %></p>
+            </div>
+            <span class="rounded-full border border-amber-300/40 px-4 py-2 text-xs font-semibold text-amber-200"><%= t('public_store.curation.tag') %></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contato" class="mt-20 rounded-3xl border border-amber-300/20 bg-gradient-to-br from-amber-400/10 via-slate-950 to-slate-950 p-10">
+      <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300"><%= t('public_store.cta.kicker') %></p>
+          <h2 class="mt-3 text-3xl font-semibold text-slate-50"><%= t('public_store.cta.title') %></h2>
+          <p class="mt-4 text-base text-slate-300"><%= t('public_store.cta.subtitle') %></p>
+        </div>
+        <div class="flex flex-wrap gap-4">
+          <a class="rounded-full bg-amber-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-200" href="mailto:atelier@madeiranobre.com">
+            <%= t('public_store.cta.primary_action') %>
+          </a>
+          <a class="rounded-full border border-slate-700 px-6 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-500" href="tel:+551130000000">
+            <%= t('public_store.cta.secondary_action') %>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-800/80">
+    <div class="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-8 text-sm text-slate-400 md:flex-row md:items-center md:justify-between">
+      <span><%= t('public_store.footer.note') %></span>
+      <span><%= t('public_store.footer.address') %></span>
+    </div>
+  </footer>
+</div>
